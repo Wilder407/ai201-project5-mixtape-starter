@@ -32,6 +32,7 @@ def search_songs(query: str) -> list[dict]:
             )
         )
         .all()
+
     )
 
     return [song.to_dict() for song in results]

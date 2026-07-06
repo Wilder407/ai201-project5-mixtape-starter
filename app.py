@@ -45,4 +45,4 @@ def create_app(config=None):
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(port=8000, debug=True)
+    app.run(port=5001, debug=True)

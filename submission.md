@@ -26,11 +26,11 @@
 
 **streak_service**
 - `POST /songs/<song_id>/listen` -> `record_listening_event()`
+- `GET /<user_id>/streak` -> `get_streak`
 
 **feed_service** 
 - `GET /<user_id>/listening-now` -> `get_friends_listening_now`
 - `GET /<user_id>/activity` -> `get_activity_feed`
-
 
 ### Pattern
 - Routes = input parsing + response formatting only. Business logic lives entirely in `services/`. 
@@ -48,4 +48,15 @@
 
 - `add_to_playlist -> create_notification(user_id=user_id)`: README says sharer should be notifies, but user_id appears to be the adding user vs sharer. Need to check where user_id is set before concluding this the a bug vs. just a misleading name. 
 
-get_user_playlists() — check your work. Look at playlist_service.py: it defines create_playlist, get_playlist_songs, get_playlist, and get_user_playlists. But scan playlists.py's routes again — is there a route that calls get_user_playlists? If not, that's worth a note, not silence. A function with no entry point calling it is either: dead code, or a missing route (maybe one of your 3 bugs — a feature that should exist but the route was never wired up). Either way, flag it.
+`get_user_playlists()` — check your work. Look at playlist_service.py: it defines create_playlist, get_playlist_songs, get_playlist, and get_user_playlists. But scan playlists.py's routes again — is there a route that calls get_user_playlists? If not, that's worth a note, not silence. A function with no entry point calling it is either: dead code, or a missing route (maybe one of your 3 bugs — a feature that should exist but the route was never wired up). Either way, flag it.
+
+### How You Reproduced it 
+5. The last song in the playlist never shows up. I ran tests.py and observed that the length of the test output was less than expected. I reviewed `playlist_seach.py` and looked for lines that generate output. The function calls `to_dict` from models.py but this only generates the dicts for the list. I further reviewed the for loop and noticed that the index [:-1] is used. Typically this makes sense to run through the end of the list. But, it appears that the loop is stopping before the end. 
+1. Sunday
+Reviewed tests.py and traced the code through the functions calls. Running tests.py confirmed that the assert 1 == 2 for adding 1 days to Sunday proves that the count is being reset. I further reviewed the paramenters and Sunday is indicated as weekday =6 with datetime method. Looking at streak_service I found an elif that indicated incrementing when the weekday != 6 then to set streak to 1. This is what is causing the reset bug. 
+
+5. 
+The bug shows up in the return statement of the get_playlist_songs function `return [song.to_dict() for song in songs[:-1]]`. The off-by-one error trunctates the for loop before adding the last song. The loop condition exits the for loop at the last song so this is never added to the playlist. The loop doesn't complete and call `to_dict` for the final song. Bug fixed by changing the index to the full list `[:]` instead of `[:-1]`.
+3. The same song keeps showing up twice in search
+
+
